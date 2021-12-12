@@ -1,6 +1,6 @@
 #include <uart.h>
 #include <avr/io.h>
-// #include <avr/iom328p.h>
+#include <avr/iom328p.h>
 
 #define UCSR0B_INIT 0b00011000
 #define UCSR0C_INIT 0b00110110
@@ -21,17 +21,16 @@ uint8_t init_uart(uint32_t baud){
 
 
 uint8_t send_line(const char *ln){
-
-    for(int i=0;ln[i]!='\n';i++){
-        send_char(ln[i]);
+    for(int i=0;ln[i]!=0;i++){
+        send_char(&ln[i]);
     }
     send_char('\n');
     return 0;
 }
 
-uint8_t send_char(char c){
-    while(!(UCSR0A && (1<<UDRE0)));
-    UDR0 = c;
+uint8_t send_char(const char *c){
+    while(!(UCSR0A && (1<<UDRE0))); //Wait for communications buffer to be empty
+    UDR0 = *c; //Place new character into buffer
     return 0;
 }
 
@@ -52,4 +51,12 @@ uint8_t recv_char(char *c){
     while(!(UCSR0A && (1<<RXC0)));
     *c = UDR0;
     return 0;
+}
+
+uint8_t compute_crc8(const char *ln){
+    uint8_t crc = ln[0];
+    for(int i=1;ln[i]!=0;i++){
+        crc ^= ln[i];
+    }
+    return crc;
 }
