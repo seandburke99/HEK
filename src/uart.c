@@ -1,9 +1,9 @@
 #include <uart.h>
 #include <avr/io.h>
-// #include <avr/iom328p.h>
+#include <avr/iom328p.h>
 
 #define UCSR0B_INIT 0b00011000
-#define UCSR0C_INIT 0b00110110
+#define UCSR0C_INIT 0b00001110
 
 uint8_t init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
