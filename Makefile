@@ -6,9 +6,9 @@
 CC = avr-gcc
 CXXFLAGS = -mmcu=atmega328p
 LDFLAGS = -Iinclude
-DEV = /dev/tty
+DEV = /dev/ttyUSB0
 AVRCONF = -C/etc/avrdude.conf
-AVRLOAD = $(AVRCONF) -v -v -patmega328p -carduino -P$(DEV) -b115200 -D -Uflash:w:bin/$(APPNAME).hex:i
+AVRLOAD = $(AVRCONF) -v -patmega328p -carduino -P$(DEV) -b57600 -D -Uflash:w:bin/$(APPNAME).hex:i
 
 # Makefile settings - Can be customized.
 APPNAME = HEK
