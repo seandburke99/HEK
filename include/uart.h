@@ -1,8 +1,14 @@
 #ifndef UART_H
 #define UART_H
-#include <avr/io.h>
-// #include <avr/iom328p.h>
 #include <stdint.h>
+#define F_CPU 16000000
+
+/*
+ * Program UART will use 8 databits with single stop bit, single parity bit. This should give reasonable communication in most circumstance especially
+ * when connection is converted to straight USB from current default mini-USB on board.
+ * This is important to remember when making the driver. Official driver will be python for ease of dev of GUI.
+ */
+
 
 uint8_t init_uart(uint32_t baud);
 uint8_t send_line(const char *ln);

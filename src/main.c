@@ -1,12 +1,13 @@
 #include <HEK.h>
 
+const char *msg = "Hello\0";
+
 int main(void){
 
     HEK_init();
 
     while(1){
-        //Wait for uart to send in block
-        
+        send_line(msg);        
     }
     return 0;
 }
