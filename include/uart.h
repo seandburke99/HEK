@@ -2,6 +2,7 @@
 #define UART_H
 #include <stdint.h>
 #define F_CPU 16000000
+#define MAX_LINE 50
 
 /*
  * Program UART will use 8 databits with single stop bit, single parity bit. This should give reasonable communication in most circumstance especially
