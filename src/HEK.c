@@ -6,3 +6,8 @@ void HEK_init(void){
     //enable interrupts
     // sei();
 }
+
+uint8_t encrypt_file_block(const char *blk, char *eblk){
+    
+    return 0;
+}
