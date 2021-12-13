@@ -1,6 +1,6 @@
 #include <uart.h>
 #include <avr/io.h>
-// #include <avr/iom328p.h>
+#include <avr/iom328p.h>
 
 #define UCSR0B_INIT 0b00011000
 #define UCSR0C_INIT 0b00110110
@@ -39,7 +39,7 @@ uint8_t recv_line(char *ln){
     cc = ln;
     while(1){
         recv_char(cc);
-        if(!*cc) 
+        if(*cc == '\n') 
             break;
         else 
             cc++;
@@ -55,7 +55,7 @@ uint8_t recv_char(char *c){
 
 uint8_t compute_crc8(const char *ln){
     uint8_t crc = ln[0];
-    for(int i=1;ln[i]!=0;i++){
+    for(int i=1;ln[i]!='\n';i++){
         crc ^= ln[i];
     }
     return crc;
