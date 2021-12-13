@@ -1,14 +1,14 @@
 #ifndef HEK_H
 #define HEK_H
-#include <aes.h>
-#include <rsa.h>
-#include <uart.h>
+#include <stdint.h>
+#define ECB 0
+#define CTR 0
 
 /*
  * Able to be changed later but to start, the aes key used to encrypt each file will be made more
- * or less unique by being the first 32 bytes of a given file. If a file is less than 32 bytes or
- * not a multiple of 32, it is padded with 0's
- *
+ * or less unique by being the first 16 bytes of a given file. If a file is less than 16 bytes or
+ * not a multiple of 16, it is padded with 0 characters (0d48). This should be done driver side
+ * 
 */
 
 void HEK_init(void);

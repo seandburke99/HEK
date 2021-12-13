@@ -1,6 +1,6 @@
 #include <uart.h>
 #include <avr/io.h>
-#include <avr/iom328p.h>
+// #include <avr/iom328p.h>
 
 #define UCSR0B_INIT 0b00011000
 #define UCSR0C_INIT 0b00110110
@@ -24,7 +24,7 @@ uint8_t send_line(const char *ln){
     for(int i=0;ln[i]!=0;i++){
         send_char(&ln[i]);
     }
-    send_char('\n');
+    send_char("\n");
     return 0;
 }
 

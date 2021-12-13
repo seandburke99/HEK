@@ -1,6 +1,6 @@
 #include <HEK.h>
 
-const char *msg = "Hello\0";
+const char *msg = "Hello";
 
 int main(void){
 
