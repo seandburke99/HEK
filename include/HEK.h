@@ -1,6 +1,7 @@
 #ifndef HEK_H
 #define HEK_H
 #include <stdint.h>
+#include <uart.h>
 #define ECB 0
 #define CTR 0
 

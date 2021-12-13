@@ -5,7 +5,7 @@ def main():
     if not com.isOpen():
         com.open()
     while(True):
-        print(com.read(6))
+        print(com.read_until('\n'.encode('utf-8')))
     
 if __name__ == "__main__":
     main()
