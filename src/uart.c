@@ -18,6 +18,18 @@ uint8_t init_uart(uint32_t baud){
 }
 //Transmit buffer (8 bit register) = UDR0
 
+uint8_t handshake_uart(void){
+    char c;
+    uint64_t timeout = F_CPU*5;
+    while(recv_char(&c)){
+        send_char(&c);
+        if(!timeout--){
+            return 1;
+        }
+    }
+    return 0;
+}
+
 uint8_t send_line(const char *ln){
     for(int i=0;ln[i]!=0;i++){
         send_char(&ln[i]);

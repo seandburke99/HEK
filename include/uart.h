@@ -11,6 +11,7 @@
  */
 
 uint8_t init_uart(uint32_t baud);
+uint8_t handshake_uart(void);
 uint8_t send_line(const char *ln);
 uint8_t send_char(const char *c);
 uint8_t recv_line(char *ln);
