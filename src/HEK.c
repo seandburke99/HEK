@@ -1,13 +1,12 @@
 #include <HEK.h>
-#include <avr/io.h>
 #include <aes.h>
-
-uint8_t HEK_flags = 0;
+#include <avr/io.h>
+// #include <avr/iom328p.h>
 
 void HEK_init(void){
     init_uart(115200);
     //enable interrupts
-    // sei();
+    DDRD |= (1<<PIND7)|(1<<PIND6);
 }
 
 void HEK_set_parse();

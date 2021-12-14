@@ -16,36 +16,37 @@ uint8_t init_uart(uint32_t baud){
     UCSR0C = UCSR0C_INIT;
     return 0;
 }
-
 //Transmit buffer (8 bit register) = UDR0
-
 
 uint8_t send_line(const char *ln){
     for(int i=0;ln[i]!=0;i++){
         send_char(&ln[i]);
     }
-    send_char("\n");
     return 0;
 }
 
 uint8_t send_char(const char *c){
-    while(!(UCSR0A && (1<<UDRE0))); //Wait for communications buffer to be empty
+    while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
     UDR0 = *c; //Place new character into buffer
     return 0;
 }
 
 uint8_t recv_line(char *ln){
-    recv_char(&ln[0]);
-    for(int i=0;i<MAX_LINE;i++){
-        recv_char(&ln[i]);
-        if(ln[i]=='\n')
-            break;
+    for(int i=0;ln[i]!='\n';i++){
+        if(recv_char(&ln[i])){
+            return 1;
+        }
     }
     return 0;
 }
 
 uint8_t recv_char(char *c){
-    while(!(UCSR0A && (1<<RXC0)));
+    while(!(UCSR0A & (1<<RXC0))){
+        if(UCSR0A & ((1<<FE0) | (1<<DOR0) | (1<UPE0))){
+            *c = '\n';
+            return 1;
+        }
+    }
     *c = UDR0;
     return 0;
 }

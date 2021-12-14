@@ -10,7 +10,6 @@
  * This is important to remember when making the driver. Official driver will be python for ease of dev of GUI.
  */
 
-
 uint8_t init_uart(uint32_t baud);
 uint8_t send_line(const char *ln);
 uint8_t send_char(const char *c);
