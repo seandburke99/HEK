@@ -2,18 +2,17 @@
 #include <avr/io.h>
 
 char rbuf[20];
-const char *send = "Received\n";
+const char *err = "Error in receiving\n";
+const char *good = "Received\n";
 
 int main(void){
-
     HEK_init();
-    int i=0;
+    handshake_uart();
     while(1){
-        if(!recv_char(&rbuf[0])){
-            PORTD |= (1<<PIND7);
-            send_char(&rbuf[0]);
+        if(recv_line(rbuf, 20)){
+            send_line(err);
         }else{
-            PORTD &= ~(1<<PIND7);
+            send_line(good);
         }
     }
     return 0;
