@@ -6,21 +6,27 @@ def main():
     if not com.isOpen():
         com.open()
     i = 0
+    sleep(0.5)
     while(True):
-        com.write("{}".format(i%10).encode("utf-8"))
-        sleep(0.2)
-        ret = com.read_all()
+        msg = "{}".format(i%10).encode("utf-8")
+        com.write(msg)
+        sleep(0.05)
+        ret = com.read()
         print(i, ret)
-        if("{}".format(i%10).encode("utf-8") == ret):
+        if ret == msg:
             print("Handshake confirmed")
             break
         i+=1
-    com.write(b'H\n')
-    sleep(0.2)
-    ret = com.read()
-    print(ret)
-
-
+    sleep(1)
+    com.write(b'Hello\n')
+    sleep(1)
+    ret = 0
+    while True:
+        ret = com.read(2)
+        print(ret)
+        com.flushInput()
+        sleep(1)
+    # print(com.read_all())
 
     
 if __name__ == "__main__":

@@ -6,14 +6,11 @@ const char *err = "Error in receiving\n";
 const char *good = "Received\n";
 
 int main(void){
+    char c;
     HEK_init();
-    handshake_uart();
+    uart_handshake();
     while(1){
-        if(recv_line(rbuf, 20)){
-            send_line(err);
-        }else{
-            send_line(good);
-        }
+        send_line(rbuf);
     }
     return 0;
 }
