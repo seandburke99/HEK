@@ -1,32 +1,26 @@
 import serial
-from time import sleep
+from time import sleep, time_ns
 
 def main():
-    com = serial.Serial("/dev/ttyUSB0", 115200, parity=serial.PARITY_ODD,timeout=3)
+    com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
     if not com.isOpen():
         com.open()
-    i = 0
     sleep(0.5)
-    while(True):
-        msg = "{}".format(i%10).encode("utf-8")
+    
+    a = time_ns()
+    j = 0
+    k = 0
+    msg = b'0123456789\n'
+    for i in range(50):
         com.write(msg)
-        sleep(0.05)
-        ret = com.read()
-        print(i, ret)
-        if ret == msg:
-            print("Handshake confirmed")
-            break
-        i+=1
-    sleep(1)
-    com.write(b'Hello\n')
-    sleep(1)
-    ret = 0
-    while True:
-        ret = com.read(2)
-        print(ret)
-        com.flushInput()
-        sleep(1)
-    # print(com.read_all())
+        ret = com.read_until()
+        if msg != ret:
+            print("Error - Sent {} and received {}".format(msg, ret))
+        j+= len(msg)-1
+        k+= len(ret) - 1
+    b = time_ns()
+    c = (b-a)/1.0e9
+    print("Bytes sent: {}\nBytes read: {}\nTime Spent: {}\nBytes Per Second: {}".format(j, k, c, j/c))
 
     
 if __name__ == "__main__":

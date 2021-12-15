@@ -5,14 +5,14 @@
 // #include <avr/iom328p.h>
 
 #define UCSR0B_INIT 0b10011000
-#define UCSR0C_INIT 0b00110110
+#define UCSR0C_INIT 0b00001110
 
 static uint8_t rbufferIdx = 0;
 static uint8_t rFlags = 0;
 static char rbuffer[100] = {0};
 
 ISR(USART_RX_vect){
-    if(UCSR0A & ((1<<UPE0) | (1<<DOR0) | (1<<FE0))){
+    if(UCSR0A & ((1<<DOR0) | (1<<FE0))){
         char c = UDR0;
     }else{
         rbuffer[rbufferIdx++] = UDR0;
@@ -79,8 +79,6 @@ uint8_t recv_line_async(char *ln, uint8_t n){
 uint8_t recv_char_async(char *c){
     if(rbufferIdx){
         *c = rbuffer[0];
-        memmove(rbuffer, &rbuffer[1], rbufferIdx-1);
-        rbuffer[rbufferIdx--] = 0;
     }else{
         return 1;
     }
