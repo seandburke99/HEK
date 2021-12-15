@@ -2,7 +2,7 @@ import serial
 from time import sleep, time_ns
 
 def main():
-    com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
+    com = serial.Serial("/dev/ttyUSB0", 76800, stopbits=serial.STOPBITS_TWO,timeout=3)
     if not com.isOpen():
         com.open()
     sleep(0.5)

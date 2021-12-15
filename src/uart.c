@@ -28,9 +28,10 @@ uint8_t init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
     // UBRR = (F_CPU / (16*BAUD)) - 1
     // uint16_t baudReg = (F_CPU / (16*baud)) - 1; // Asynchronus baud rate register calculation regular speed
-    UBRR0L = 8;
+    UBRR0L = 25;
     UBRR0H = 0;
     //Set USCR0(ABC)
+    UCSR0A = (1<<U2X0);
     UCSR0B = UCSR0B_INIT;
     UCSR0C = UCSR0C_INIT;
     return 0;
@@ -40,7 +41,7 @@ uint8_t init_uart(uint32_t baud){
 void uart_handshake(void){
     char c = 0;
     while(recv_char_async(&c));
-    send_char(&c);
+    send_char(c);
 }
 
 uint8_t send_line(const char *ln){
