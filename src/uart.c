@@ -28,7 +28,7 @@ uint8_t init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
     // UBRR = (F_CPU / (16*BAUD)) - 1
     // uint16_t baudReg = (F_CPU / (16*baud)) - 1; // Asynchronus baud rate register calculation regular speed
-    UBRR0L = 25;
+    UBRR0L = 16;
     UBRR0H = 0;
     //Set USCR0(ABC)
     UCSR0A = (1<<U2X0);
