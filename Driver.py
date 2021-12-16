@@ -13,11 +13,23 @@ class HEK:
     def __init__(self):
         NotImplemented
 
-    def connect_to_key(self, port, baud):
-        NotImplemented
+    def connect_to_key(self, port="/dev/ttyUSB0", baud=115200):
+        self.com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
+        if not self.com.isOpen():
+            self.com.open()
+        return
     
     def handshake_key(self):
-        NotImplemented
+        i = 0
+        while True:
+            msg = bytes([i%10])+b'\n'
+            self.com.write(msg)
+            ret = self.com.read_until()
+            print(msg, ret)
+            if msg==ret:
+                break
+            i+=1
+        return
     
     def get_files(self, path):
         NotImplemented
@@ -27,16 +39,14 @@ class HEK:
     
 
 def main():
-    com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
-    if not com.isOpen():
-        com.open()
+    K = HEK()
+    K.connect_to_key()
+    K.handshake_key()
+
+def main2():
+    
     sleep(0.5)
-    msg = b'1\n'
-    while True:
-        com.write(msg)
-        ret = com.read_until()
-        if msg==ret:
-            break
+    
     j = 0
     k = 0
     msg = b'0123456789'

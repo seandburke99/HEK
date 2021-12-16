@@ -39,15 +39,16 @@ uint8_t init_uart(uint32_t baud){
 //Transmit buffer (8 bit register) = UDR0
 
 void uart_handshake(void){
-    char c = 0;
-    while(recv_char_async(&c));
-    send_char(c);
+    char c[3] = {0};
+    while(recv_line_async(c, 3));
+    send_line(c);
 }
 
 uint8_t send_line(const char *ln){
-    for(int i=0;ln[i]!=0;i++){
+    for(int i=0;ln[i]!='\n';i++){
         send_char(ln[i]);
     }
+    send_char('\n');
     return 0;
 }
 
@@ -80,6 +81,11 @@ uint8_t recv_line_async(char *ln, uint8_t n){
 uint8_t recv_char_async(char *c){
     if(rbufferIdx){
         *c = rbuffer[0];
+        rbufferIdx--;
+        for(int i=0;i<rbufferIdx;i++){
+            rbuffer[i] = rbuffer[i+1];
+        }
+        rbuffer[rbufferIdx] = 0;
     }else{
         return 1;
     }
