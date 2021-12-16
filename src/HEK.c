@@ -11,6 +11,18 @@ void HEK_init(void){
     sei();
 }
 
-uint8_t get_rsa_key(uint8_t *k, uint8_t idx);
-uint8_t generate_aes_key(uint8_t *k);
-uint8_t encrypt_file_block(const char *blk, char *eblk, uint8_t *k);
+uint8_t generate_rsa_key(uint8_t *k){
+    return 0;
+}
+
+uint8_t get_rsa_key(uint8_t *k, uint8_t idx){
+    return 0;
+}
+
+uint8_t generate_aes_key(uint8_t *k){
+    return 0;
+}
+
+uint8_t encrypt_file_block(const char *blk, char *eblk, uint8_t *k){
+    return 0;
+}

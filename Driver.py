@@ -1,5 +1,6 @@
 import serial
 from time import sleep, time_ns
+import tkinter as tk
 
 def compute_crc(data):
     crc = data[0] & 0xFF
@@ -7,6 +8,23 @@ def compute_crc(data):
         crc ^= b
         crc &= 0xFF
     return crc
+
+class HEK:
+    def __init__(self):
+        NotImplemented
+
+    def connect_to_key(self, port, baud):
+        NotImplemented
+    
+    def handshake_key(self):
+        NotImplemented
+    
+    def get_files(self, path):
+        NotImplemented
+    
+    def encrypt_file(self, f):
+        NotImplemented
+    
 
 def main():
     com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
