@@ -1,18 +1,20 @@
 #include <HEK.h>
 #include <avr/io.h>
+#include <stdio.h>
 
-char rbuf[50];
-const char *err = "Error in receiving\n";
-const char *good = "Received\n";
+char rbuf[4*32+1];
 
 int main(void){
-    char c;
+    uint8_t newkey[32];
     HEK_init();
     uart_handshake();
     while(1){
-        if(!recv_line_async(rbuf, 50)){
-            send_line(rbuf);
+        generate_aes_key(newkey);
+        for(int i=0;i<32;i++){
+            sprintf(&rbuf[i*4], "%03d ", newkey[i]);
         }
+        sprintf(&rbuf[4*32], "\n");
+        send_line(rbuf);
     }
     return 0;
 }

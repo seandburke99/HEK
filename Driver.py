@@ -44,26 +44,22 @@ def main():
     K.handshake_key()
 
 def main2():
-    
-    sleep(0.5)
-    
-    j = 0
-    k = 0
-    msg = b'0123456789'
-    print(compute_crc(msg))
-    msg = b'0123456789\n'
-    a = time_ns()
-    for i in range(50):
+    com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
+    if not com.isOpen():
+        com.open()
+    i = 0
+    while True:
+        msg = bytes([i%10])+b'\n'
         com.write(msg)
         ret = com.read_until()
-        if msg != ret:
-            print("Error - Sent {} and received {}".format(msg, ret))
-        j+= len(msg)-1
-        k+= len(ret) - 1
-        b = time_ns()
-    c = (b-a)/1.0e9
-    print("Bytes sent: {}\nBytes read: {}\nTime Spent: {}\nBytes Per Second: {}".format(j, k, c, j/c))
+        print(msg, ret)
+        if msg==ret:
+            print("Handshake confirmed")
+            break
+        i+=1
+    for i in range(10):
+        print(com.read_until())
 
     
 if __name__ == "__main__":
-    main()
+    main2()
