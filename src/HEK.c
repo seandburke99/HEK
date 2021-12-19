@@ -5,7 +5,7 @@
 // #include <avr/iom328p.h>
 
 void HEK_init(void){
-    init_uart(115200);
+    tstream = init_uart(115200);
     //enable interrupts
     DDRD |= (1<<PIND7)|(1<<PIND6);
     ADMUX |= (1<<REFS0);

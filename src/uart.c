@@ -1,11 +1,13 @@
 #include <uart.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-#include <string.h>
 // #include <avr/iom328p.h>
 
-#define UCSR0B_INIT 0b10011000
+// #define UCSR0B_INIT 0b10011000 //Sets up UART with receive interrupt
+#define UCSR0B_INIT 0b00011000 //Sets up UART without receive interrupt
 #define UCSR0C_INIT 0b00001110
+
+static FILE tbuf = FDEV_SETUP_STREAM(send_char_stream, recv_char_stream, _FDEV_SETUP_RW);
 
 static uint8_t rbufferIdx = 0;
 static uint8_t rFlags = 0;
@@ -24,7 +26,7 @@ ISR(USART_RX_vect){
     }
 }
 
-uint8_t init_uart(uint32_t baud){
+FILE *init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
     // UBRR = (F_CPU / (16*BAUD)) - 1
     // uint16_t baudReg = (F_CPU / (16*baud)) - 1; // Asynchronus baud rate register calculation regular speed
@@ -34,7 +36,7 @@ uint8_t init_uart(uint32_t baud){
     UCSR0A = (1<<U2X0);
     UCSR0B = UCSR0B_INIT;
     UCSR0C = UCSR0C_INIT;
-    return 0;
+    return &tbuf;
 }
 //Transmit buffer (8 bit register) = UDR0
 
@@ -42,6 +44,13 @@ void uart_handshake(void){
     char c[3] = {0};
     while(recv_line_async(c, 3));
     send_line(c);
+}
+
+void uart_handshake_stream(void){
+    char c[10];
+    while(fscanf(&tbuf, "%s", c)){
+        fprintf(&tbuf, "%s\n", c);
+    }
 }
 
 uint8_t send_line(const char *ln){
@@ -53,6 +62,12 @@ uint8_t send_line(const char *ln){
 }
 
 uint8_t send_char(char c){
+    while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
+    UDR0 = c; //Place new character into buffer
+    return 0;
+}
+
+int send_char_stream(char c, FILE *stream){
     while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
     UDR0 = c; //Place new character into buffer
     return 0;
@@ -90,6 +105,16 @@ uint8_t recv_char_async(char *c){
         return 1;
     }
     return 0;
+}
+
+int recv_char_stream(FILE *stream){
+    while(!(UCSR0A & (1<<RXC0)));
+    if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
+        return UDR0;
+    }
+    else{
+        return 0;
+    }
 }
 
 uint8_t compute_crc8(const char *ln){

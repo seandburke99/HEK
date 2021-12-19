@@ -12,6 +12,8 @@
  * 
 */
 
+FILE *tstream;
+
 void HEK_init(void);
 
 uint8_t parse_cmd(char msg[]);
