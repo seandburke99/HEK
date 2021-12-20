@@ -112,9 +112,9 @@ class HEK:
                     else:
                         break
             else:
-            if(i==len(buf)-1):
-                print(ret[15])
-            ptf.write(ret)
+                if(i==len(buf)-1):
+                    print(ret[15])
+                ptf.write(ret)
         ptf.close()
         ecf.close()
     
