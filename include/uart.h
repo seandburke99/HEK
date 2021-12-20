@@ -12,9 +12,11 @@
 
 uint8_t init_uart(uint32_t baud);
 void uart_handshake(void);
-uint8_t send_block(const uint8_t *blk);
 uint8_t send_char(const uint8_t c);
-uint8_t recv_block(uint8_t *blk);
+uint8_t send_block(const uint8_t *blk);
+uint8_t send_line(const uint8_t *ln);
 uint8_t recv_char(uint8_t *c);
+uint8_t recv_block(uint8_t *blk);
+uint8_t recv_line(uint8_t *ln);
 uint8_t compute_crc8(const uint8_t *ln, uint16_t len);
 #endif

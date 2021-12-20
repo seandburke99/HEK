@@ -3,22 +3,20 @@
 #include <string.h>
 
 int main(void){
-    uint8_t key[33];
-    uint8_t iv[17];
-    key[32] = 0;
-    iv[16] = 0;
-    char crc;
+    uint8_t c;
     HEK_init();
     uart_handshake();
     while(1){
-        generate_aes_ctx(key, iv);
-        for(int i=0;i<16;i++){
-            key[i] = 0;
+        if(recv_char(&c)){
+            continue;
         }
-        send_block(key);
-        send_block(&key[16]);
-        crc = compute_crc8(key, 32);
-        send_char(crc);
+        switch(c){
+            case 'e':
+                encrypt_file();
+                break;
+            case 'n':
+                break;
+        }
     }
     return 0;
 }

@@ -32,15 +32,35 @@ void uart_handshake(void){
     }
 }
 
+uint8_t send_char(const uint8_t c){
+    while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
+    UDR0 = c; //Place new character into buffer
+    return 0;
+}
+
 uint8_t send_block(const uint8_t *blk){
     for(int i=0;i<BLOCKLEN;i++){
         send_char(blk[i]);
     }
+    return 0;
 }
 
-uint8_t send_char(const uint8_t c){
-    while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
-    UDR0 = c; //Place new character into buffer
+uint8_t send_line(const uint8_t *ln){
+    for(int i=0;ln[i]!='\n';i++){
+        send_char(ln[i]);
+    }
+    send_char('\n');
+    return 0;
+}
+
+uint8_t recv_char(uint8_t *c){
+    while(!(UCSR0A & (1<<RXC0)));
+    if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
+        *c = UDR0;
+    }
+    else{
+        return 1;
+    }
     return 0;
 }
 
@@ -53,14 +73,13 @@ uint8_t recv_block(uint8_t *blk){
     return 0;
 }
 
-uint8_t recv_char(uint8_t *c){
-    while(!(UCSR0A & (1<<RXC0)));
-    if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
-        *c = UDR0;
-    }
-    else{
-        return 1;
-    }
+uint8_t recv_line(uint8_t *ln){
+    uint16_t i = 0;
+    do{
+        if(recv_char(&ln[i])){
+            return 1;
+        }
+    }while(ln[i++]!='\n');
     return 0;
 }
 
