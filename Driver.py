@@ -20,15 +20,13 @@ class HEK:
         return
     
     def handshake_key(self):
-        i = 0
         while True:
-            msg = bytes([i%10])+b'\n'
-            self.com.write(msg)
+            self.com.write(b'1')
             ret = self.com.read_until()
-            print(msg, ret)
-            if msg==ret:
+            if ret==b'2':
+                self.com.write(b'2')
+                print("Handshake confirmed")
                 break
-            i+=1
         return
     
     def get_files(self, path):
@@ -49,17 +47,27 @@ def main2():
         com.open()
     i = 0
     while True:
-        msg = bytes([i%10])+b'\n'
-        com.write(msg)
+        com.write(b'1')
         ret = com.read_until()
-        print(msg, ret)
-        if msg==ret:
+        if ret==b'2':
+            com.write(b'2')
             print("Handshake confirmed")
             break
         i+=1
-    for i in range(10):
-        print(com.read_until())
+    ret = com.read(32)
+    print(len(ret), [b for b in ret])
+    print(compute_crc(ret))
+
+def main3():
+    with open("input_files/test.txt", "rb") as f:
+        while True:
+            ret = f.read(16)
+            if ret:
+                print([b for b in ret])
+            else:
+                break
+            
 
     
 if __name__ == "__main__":
-    main2()
+    main3()

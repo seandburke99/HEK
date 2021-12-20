@@ -3,28 +3,10 @@
 #include <avr/interrupt.h>
 // #include <avr/iom328p.h>
 
-// #define UCSR0B_INIT 0b10011000 //Sets up UART with receive interrupt
 #define UCSR0B_INIT 0b00011000 //Sets up UART without receive interrupt
 #define UCSR0C_INIT 0b00001110
 
-static FILE tbuf = FDEV_SETUP_STREAM(send_char_stream, recv_char_stream, _FDEV_SETUP_RW);
-
-static uint8_t rbufferIdx = 0;
-static uint8_t rFlags = 0;
-static char rbuffer[100] = {0};
-
-ISR(USART_RX_vect){
-    if(UCSR0A & ((1<<DOR0) | (1<<FE0))){
-        char c = UDR0;
-    }else{
-        rbuffer[rbufferIdx++] = UDR0;
-        rFlags |= (1<<NEW_CHAR);
-        if(rbuffer[rbufferIdx-1]=='\n'){
-            rFlags |= (1<<NEW_LINE);
-        }
-        rbuffer[rbufferIdx] = 0;
-    }
-}
+static FILE tbuf = FDEV_SETUP_STREAM(send_char, recv_char, _FDEV_SETUP_RW);
 
 FILE *init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
@@ -41,73 +23,24 @@ FILE *init_uart(uint32_t baud){
 //Transmit buffer (8 bit register) = UDR0
 
 void uart_handshake(void){
-    char c[3] = {0};
-    while(recv_line_async(c, 3));
-    send_line(c);
-}
-
-void uart_handshake_stream(void){
-    char c[10];
-    while(fscanf(&tbuf, "%s", c)){
-        fprintf(&tbuf, "%s\n", c);
+    char c;
+    const char cc = '2';
+    while(1){
+        fscanf(&tbuf, "%c", &c);
+        if(c=='2'){
+            break;
+        }
+        fprintf(&tbuf, "%c", cc);
     }
 }
 
-uint8_t send_line(const char *ln){
-    for(int i=0;ln[i]!='\n';i++){
-        send_char(ln[i]);
-    }
-    send_char('\n');
-    return 0;
-}
-
-uint8_t send_char(char c){
+int send_char(const char c, FILE *stream){
     while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
     UDR0 = c; //Place new character into buffer
     return 0;
 }
 
-int send_char_stream(char c, FILE *stream){
-    while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
-    UDR0 = c; //Place new character into buffer
-    return 0;
-}
-
-uint8_t recv_line_async(char *ln, uint8_t n){
-    int i, am;
-    if(rFlags & (1<<NEW_LINE)){
-        if(n>rbufferIdx){
-            am = rbufferIdx;
-        }else{
-            am = n;
-        }
-        rbufferIdx = 0;
-        for(i=0;i<am;i++){
-            ln[i] = rbuffer[i];
-            rbuffer[i] = 0;
-        }
-        rFlags &= ~(1<<NEW_LINE);
-    }else{
-        return 1;
-    }
-    return 0;
-}
-
-uint8_t recv_char_async(char *c){
-    if(rbufferIdx){
-        *c = rbuffer[0];
-        rbufferIdx--;
-        for(int i=0;i<rbufferIdx;i++){
-            rbuffer[i] = rbuffer[i+1];
-        }
-        rbuffer[rbufferIdx] = 0;
-    }else{
-        return 1;
-    }
-    return 0;
-}
-
-int recv_char_stream(FILE *stream){
+int recv_char(FILE *stream){
     while(!(UCSR0A & (1<<RXC0)));
     if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
         return UDR0;
@@ -119,7 +52,7 @@ int recv_char_stream(FILE *stream){
 
 uint8_t compute_crc8(const char *ln){
     uint8_t crc = ln[0];
-    for(int i=1;ln[i]!='\n';i++){
+    for(int i=1;ln[i]!=0;i++){
         crc ^= ln[i];
     }
     return crc;
