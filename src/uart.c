@@ -64,10 +64,11 @@ uint8_t recv_char(uint8_t *c){
     return 0;
 }
 
-uint8_t compute_crc8(const uint8_t *ln){
+uint8_t compute_crc8(const uint8_t *ln, uint16_t len){
     uint8_t crc = 0;
-    for(int i=0;ln[i]!=0;i++){
-        crc ^= ln[i];
+    const uint8_t *data = ln;
+    while(len--){
+        crc ^= *data++;
     }
     return crc;
 }

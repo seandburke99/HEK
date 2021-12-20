@@ -13,9 +13,6 @@ void HEK_init(void){
 }
 
 uint8_t parse_cmd(char msg[]){
-    if(compute_crc8(msg)){ //To check crc, compute crc on message. 0 expected, other on error
-        return 1;
-    }
 
     return 0;
 }

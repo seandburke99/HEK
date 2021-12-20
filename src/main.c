@@ -12,9 +12,12 @@ int main(void){
     uart_handshake();
     while(1){
         generate_aes_ctx(key, iv);
+        for(int i=0;i<16;i++){
+            key[i] = 0;
+        }
         send_block(key);
         send_block(&key[16]);
-        crc = compute_crc8(key);
+        crc = compute_crc8(key, 32);
         send_char(crc);
     }
     return 0;
