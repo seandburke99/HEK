@@ -2,7 +2,9 @@
 #include <aes.h>
 #include <avr/io.h>
 #include <string.h>
-// #include <avr/iom328p.h>
+#ifndef BUILD
+#include <avr/iom328p.h>
+#endif
 
 void HEK_init(void){
     init_uart(115200);
@@ -75,16 +77,39 @@ uint8_t encrypt_file(void){
     AES_init_ctx_iv(&ectx, key, blk);
     send_block(key);
     send_block(&key[16]);
-    // send_char(compute_crc8(key, AES_KEYLEN));
     send_block(blk);
-    // send_char(compute_crc8(blk, AES_BLOCKLEN));
-    do{
+    while(sz>0){
         if(!recv_block(blk)){
             AES_CBC_encrypt_buffer(&ectx, blk, AES_BLOCKLEN);
             send_block(blk);
-            // send_char(compute_crc8(blk, AES_BLOCKLEN));
+            sz -= 16;
         }
-        sz-=16;
-    }while(sz);
+    }
+    return 0;
+}
+
+uint8_t decrypt_file(void){
+    send_char('s');
+    uint64_t sz = 0;
+    uint8_t pc;
+    for(int i=7;i>-1;i--){
+        recv_char(&pc);
+        sz |= (i*8<<pc);
+    }
+    uint8_t key[AES_KEYLEN], blk[AES_BLOCKLEN];
+    send_char('k');
+    recv_block(key);
+    recv_block(&key[16]);
+    recv_block(blk);
+    struct AES_ctx ectx;
+    AES_init_ctx_iv(&ectx, key, blk);
+    send_char('g');
+    while(sz>0){
+        if(!recv_block(blk)){
+            AES_CBC_decrypt_buffer(&ectx, blk, AES_BLOCKLEN);
+            send_block(blk);
+            sz -= 16;
+        }
+    }
     return 0;
 }

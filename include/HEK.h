@@ -17,7 +17,7 @@ uint8_t get_rsa_key(uint8_t *k, uint8_t idx);
 uint8_t generate_aes_ctx(uint8_t *k, uint8_t *iv);
 uint8_t encrypt_key_iv(uint8_t rsakID, uint8_t *k, uint8_t *iv);
 uint8_t encrypt_file(void);
-uint8_t encrypt_block(const char *blk, char *eblk, uint8_t *k);
+uint8_t decrypt_file(void);
 uint16_t read_adc(uint8_t channel);
 
 #endif

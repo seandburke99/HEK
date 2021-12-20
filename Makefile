@@ -4,7 +4,7 @@
 
 # Compiler settings - Can be customized.
 CC = avr-gcc
-CXXFLAGS = -mmcu=atmega328p
+CXXFLAGS = -mmcu=atmega328p -D BUILD
 LDFLAGS = -Iinclude
 DEV = /dev/ttyUSB0
 AVRCONF = -C/etc/avrdude.conf

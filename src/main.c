@@ -14,6 +14,9 @@ int main(void){
             case 'e':
                 encrypt_file();
                 break;
+            case 'd':
+                decrypt_file();
+                break;
             case 'n':
                 break;
         }

@@ -1,7 +1,9 @@
 #include <uart.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
-// #include <avr/iom328p.h>
+#ifndef BUILD
+#include <avr/iom328p.h>
+#endif
 
 #define BLOCKLEN 16
 #define UCSR0B_INIT 0b00011000 //Sets up UART without receive interrupt
