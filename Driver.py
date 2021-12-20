@@ -3,7 +3,7 @@ from time import sleep, time_ns
 import tkinter as tk
 
 def compute_crc(data):
-    crc = data[0] & 0xFF
+    crc = 0;
     for b in data:
         crc ^= b
         crc &= 0xFF
@@ -54,20 +54,18 @@ def main2():
             print("Handshake confirmed")
             break
         i+=1
-    ret = com.read(32)
-    print(len(ret), [b for b in ret])
-    print(compute_crc(ret))
+    for i in range(5):
+        key = com.read(32)
+        kcrc = com.read()
+        print("{} byte key:".format(len(key)), [b for b in key], compute_crc(key), int.from_bytes(kcrc, 'big'))
 
 def main3():
-    with open("input_files/test.txt", "rb") as f:
-        while True:
-            ret = f.read(16)
-            if ret:
-                print([b for b in ret])
-            else:
-                break
+    ret = compute_crc([
+        1,2,3,4,5,6,7,8
+    ])
+    print(ret)
             
 
     
 if __name__ == "__main__":
-    main3()
+    main2()

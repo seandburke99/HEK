@@ -5,8 +5,6 @@
 #define ECB 0
 #define CBC 0
 
-FILE *tstream;
-
 typedef enum HEKCMD{
     ENCRYPT,
     NEWRSA
@@ -16,7 +14,7 @@ void HEK_init(void);
 uint8_t parse_cmd(char msg[]);
 uint8_t generate_rsa_key(uint8_t *k);
 uint8_t get_rsa_key(uint8_t *k, uint8_t idx);
-uint8_t generate_aes_key(uint8_t *k);
+uint8_t generate_aes_ctx(uint8_t *k, uint8_t *iv);
 uint8_t encrypt_block(const char *blk, char *eblk, uint8_t *k);
 uint16_t read_adc(uint8_t channel);
 

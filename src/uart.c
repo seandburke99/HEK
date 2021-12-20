@@ -3,12 +3,11 @@
 #include <avr/interrupt.h>
 // #include <avr/iom328p.h>
 
+#define BLOCKLEN 16
 #define UCSR0B_INIT 0b00011000 //Sets up UART without receive interrupt
 #define UCSR0C_INIT 0b00001110
 
-static FILE tbuf = FDEV_SETUP_STREAM(send_char, recv_char, _FDEV_SETUP_RW);
-
-FILE *init_uart(uint32_t baud){
+uint8_t init_uart(uint32_t baud){
     // Set Baud Rate (UBRR)
     // UBRR = (F_CPU / (16*BAUD)) - 1
     // uint16_t baudReg = (F_CPU / (16*baud)) - 1; // Asynchronus baud rate register calculation regular speed
@@ -18,41 +17,56 @@ FILE *init_uart(uint32_t baud){
     UCSR0A = (1<<U2X0);
     UCSR0B = UCSR0B_INIT;
     UCSR0C = UCSR0C_INIT;
-    return &tbuf;
+    return 0;
 }
 //Transmit buffer (8 bit register) = UDR0
 
 void uart_handshake(void){
     char c;
-    const char cc = '2';
     while(1){
-        fscanf(&tbuf, "%c", &c);
+        recv_char(&c);
         if(c=='2'){
             break;
         }
-        fprintf(&tbuf, "%c", cc);
+        send_char('2');
     }
 }
 
-int send_char(const char c, FILE *stream){
+uint8_t send_block(const uint8_t *blk){
+    for(int i=0;i<BLOCKLEN;i++){
+        send_char(blk[i]);
+    }
+}
+
+uint8_t send_char(const uint8_t c){
     while(!(UCSR0A & (1<<UDRE0))); //Wait for communications buffer to be empty
     UDR0 = c; //Place new character into buffer
     return 0;
 }
 
-int recv_char(FILE *stream){
-    while(!(UCSR0A & (1<<RXC0)));
-    if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
-        return UDR0;
+uint8_t recv_block(uint8_t *blk){
+    for(int i=0;i<BLOCKLEN;i++){
+        if(recv_char(&blk[i])){
+            return 1;
+        }
     }
-    else{
-        return 0;
-    }
+    return 0;
 }
 
-uint8_t compute_crc8(const char *ln){
-    uint8_t crc = ln[0];
-    for(int i=1;ln[i]!=0;i++){
+uint8_t recv_char(uint8_t *c){
+    while(!(UCSR0A & (1<<RXC0)));
+    if(!(UCSR0A & ((1<<DOR0) | (1<<FE0)))){
+        *c = UDR0;
+    }
+    else{
+        return 1;
+    }
+    return 0;
+}
+
+uint8_t compute_crc8(const uint8_t *ln){
+    uint8_t crc = 0;
+    for(int i=0;ln[i]!=0;i++){
         crc ^= ln[i];
     }
     return crc;
