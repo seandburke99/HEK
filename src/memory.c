@@ -1,7 +1,7 @@
 #include <memory.h>
 #include <avr/io.h>
 
-uint8_t store_key(const char key[]){
+uint8_t store_key(const uint8_t key[]){
     // Wait for the ability to write
     // while(EECR & (1<<EEPE));
     //Set address in register EEAR
@@ -13,7 +13,7 @@ uint8_t store_key(const char key[]){
     return 0;
 }
 
-uint8_t retrieve_key(uint16_t index, char *key){
+uint8_t retrieve_key(uint16_t index, uint8_t *key){
     // Wait for ability to read
     // while(EECR & (1<<EEPE));
     //Set address in register EEAR

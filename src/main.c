@@ -11,13 +11,17 @@ int main(void){
             continue;
         }
         switch(c){
+            case NEWRSAKEY:
+                new_rsa_key();
+                break;
+            case 'k':
+                use_rsa_key();
+                break;
             case 'e':
                 encrypt_file();
                 break;
             case 'd':
                 decrypt_file();
-                break;
-            case 'n':
                 break;
         }
     }

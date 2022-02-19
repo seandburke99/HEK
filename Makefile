@@ -42,7 +42,7 @@ $(APPNAME): $(OBJ)
 	avr-objcopy -j .text -j .data -O ihex bin/$(APPNAME).elf bin/$(APPNAME).hex
 
 bin:
-	mkdir $@
+	mkdir -p $@
 
 # Creates the dependecy rules
 $(DEPDIR)/%.d: $(SRCDIR)/%$(EXT)
