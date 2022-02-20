@@ -2,3 +2,6 @@
 *.o
 *.d
 bin
+input_files
+output_files
+log
