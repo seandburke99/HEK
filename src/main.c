@@ -15,6 +15,7 @@ int main(void){
 	while(1){
 		PORTD |= (1<<PIND7);
 		if(recv_char(&c)){
+			c = 0;
 			continue;
 		}
 		switch(c){
@@ -32,7 +33,6 @@ int main(void){
 				decrypt_file();
 				break;
 		}
-		c = 0;
 	}
 	return 0;
 }

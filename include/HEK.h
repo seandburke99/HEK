@@ -18,7 +18,7 @@ typedef enum HEKCMD{
 
 union BUF2SIZE{
     uint64_t size;
-    uint8_t buffer[8];
+    uint8_t buffer[2];
 };
 
 /**

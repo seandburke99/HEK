@@ -69,9 +69,6 @@ class HEKApplication(Tk):
 	
 		return
 	
-	
-
-
 	def select_output_dir(self) -> None:
 		self.outputDir = filedialog.askdirectory(initialdir=self.outputDir, title="Select directory")
 		self.outputDirLabel.config(text = self.outputDir)
@@ -90,12 +87,12 @@ class HEKApplication(Tk):
 		for f in self.inputFiles:
 			# Update the window without getting user input
 			self.update_idletasks()
-			# Perform shit
+			# Perform encryption
 			outFName = self.outputDir + "/" + str(basename(f)).replace('.', '_') + ".hef"
 			self.driver.encrypt_file(f, outFName)
 			# Update bar value
 			pBar['value'] += int(100/len(self.inputFiles))
-			sleep(3)
+			sleep(0.1)
 		pBar.destroy()
 
 	def decrypt_files(self):
@@ -104,12 +101,12 @@ class HEKApplication(Tk):
 		for f in self.inputFiles:
 			# Update the window without getting user input
 			self.update_idletasks()
-			# Perform shit
+			# Perform decryption
 			outFName = str(basename(f)).replace(".hef", '').replace('_', '.')
-			print(outFName)
+			self.driver.decrypt_file(f, outFName)
 			# Update bar value
 			pBar['value'] += int(100/len(self.inputFiles))
-			sleep(2)
+			sleep(0.1)
 		pBar.destroy()
 
 
@@ -145,7 +142,7 @@ class HEKDriver:
 			NotImplemented
 		return True
 	
-	def encrypt_file(self, fin : str, fout : str = None):
+	def encrypt_file(self, fin : str, fout : str):
 		ptf = open(fin, "rb")
 		ecf = open(fout, "wb")
 		buf = []
@@ -167,10 +164,10 @@ class HEKDriver:
 		self.com.timeout = 8
 		self.com.read_until(b's')
 		log.debug("Received size cmd")
-		print(sz, [len(i) for i in buf], buf)
 		self.com.write(bytes([sz & 0xFF]))
 		for i in range(1,8):
 			self.com.write(bytes([sz & (i*8<<0xFF)]))
+		log.debug("Sent size of {} bytes".format(sz))
 		ecf.write(self.com.read(32))
 		ecf.write(self.com.read(16))
 		log.debug("Received key and initialization vector")
@@ -183,7 +180,7 @@ class HEKDriver:
 		ptf.close()
 		ecf.close()
 
-	def decrypt_file(self, fin="output_files/encrypted_file.hef", fout="ret.txt"):
+	def decrypt_file(self, fin : str, fout : str):
 		ecf = open(fin, "rb")
 		ptf = open(fout, "wb")
 		key = ecf.read(32)
@@ -257,7 +254,7 @@ class HEKDriver:
 		ecf.close()
 
 def main():
-	a = HEKApplication("/dev/ttyUSB1")
+	a = HEKApplication("/dev/ttyUSB0")
 	a.mainloop()
 	
 if __name__ == "__main__":
