@@ -6,7 +6,7 @@
 CC = avr-gcc
 CXXFLAGS = -mmcu=atmega328p -D BUILD
 LDFLAGS = -Iinclude
-DEV = /dev/ttyUSB0
+DEV = /dev/ttyUSB1
 AVRCONF = -C/etc/avrdude.conf
 AVRLOAD = $(AVRCONF) -v -patmega328p -carduino -P$(DEV) -b57600 -D -Uflash:w:bin/$(APPNAME).hex:i
 

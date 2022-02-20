@@ -16,6 +16,11 @@ typedef enum HEKCMD{
     USERSAKEY = 'k'
 }HEKCMD;
 
+union BUF2SIZE{
+    uint64_t size;
+    uint8_t buffer[8];
+};
+
 /**
  * @brief Initialization for the system
  * 

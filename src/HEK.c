@@ -65,11 +65,9 @@ uint8_t encrypt_key_iv(uint8_t rsakID, uint8_t *k, uint8_t *iv){
 
 uint8_t encrypt_file(void){
     send_char('s');
-    uint64_t sz = 0;
-    uint8_t pc;
-    for(int i=7;i>-1;i--){
-        recv_char(&pc);
-        sz |= (i*8<<pc);
+    union BUF2SIZE cnv;
+    for(int i=0;i<8;i++){
+        recv_char(&cnv.buffer[i]);
     }
     uint8_t key[AES_KEYLEN], blk[AES_BLOCKLEN];
     generate_aes_ctx(key, blk);
@@ -78,13 +76,15 @@ uint8_t encrypt_file(void){
     send_block(key);
     send_block(&key[16]);
     send_block(blk);
-    while(sz>0){
+    while(cnv.size>0){
+        PORTD |= (1<<PIND6);
         if(!recv_block(blk)){
             AES_CBC_encrypt_buffer(&ectx, blk, AES_BLOCKLEN);
             send_block(blk);
-            sz -= 16;
+            cnv.size -= 16;
         }
     }
+    PORTD &= ~(1<<PIND6);
     return 0;
 }
 

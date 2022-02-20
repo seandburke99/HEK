@@ -5,14 +5,13 @@ from serial.serialutil import SerialException
 import logging as log
 import os
 from os import mkdir, getcwd
-from os.path import isdir
+from os.path import isdir, basename
 
-from time import time
+from time import time, sleep
 
 import tkinter as tk
-from tkinter import Tk
-from tkinter import filedialog
-from Crypto.Cipher import AES
+from tkinter import Tk, filedialog
+from tkinter.ttk import Progressbar
 
 def compute_crc(data):
 	crc = 0;
@@ -21,48 +20,56 @@ def compute_crc(data):
 		crc &= 0xFF
 	return crc
 
+def init_logging():
+	logFile = "log/{}.log".format(time())
+	if not isdir("log"):
+		mkdir("log")
+	# log.basicConfig(filename=logFile, encoding='utf-8', level=log.DEBUG)
+	log.basicConfig(encoding='utf-8', level=log.DEBUG)
+
+
+init_logging()
+
 class HEKApplication(Tk):
 	def __init__(self, keyName="/dev/ttyUSB0"):
 		
 		# Tk setup
 		super(HEKApplication, self).__init__()
 		self.title("Hardware Encryption Key")
-		self.geometry("500x500")		
+		self.geometry("500x500")
+
+		# Driver creation
+		self.driver = HEKDriver()
+
 		self.selectFilesButton = tk.Button(self, text="Select Files", command=self.select_files)
 		self.selectedFilesLabel = tk.Label(self)
 
 		self.selOutputDirButton = tk.Button(self, text = "Select Output File Directory", command=self.select_output_dir)
 		self.outputDirLabel = tk.Label(self)
 
+		self.encryptButton = tk.Button(self, text="Encrypt selected files", command=self.encrypt_files)
+		self.decryptButton = tk.Button(self, text="Decrypt selected files", command=self.decrypt_files)
+
 		self.inputFiles = list
 		
 		self.outputDir = getcwd()
-		self.outputFile = list
 
 		self.selectFilesButton.pack()
 		self.selectedFilesLabel.pack()
 		self.selOutputDirButton.pack()
 		self.outputDirLabel.pack()
-
-		# Logging setup
-		self.init_logging()
+		self.encryptButton.pack()
+		self.decryptButton.pack()
 
 		# Driver setup
-		self.driver = HEKDriver()
 		if not self.driver.connect_to_key(port = keyName):
 			log.error("Unable to connect to hardware key")
-			return
 		if not self.driver.handshake_key():
 			log.error("Unable to complete handshake with hardware key")
-			return
 	
 		return
 	
-	def init_logging(self):
-		logFile = "log/{}.log".format(time())
-		if not isdir("log"):
-			mkdir("log")
-		log.basicConfig(filename=logFile, encoding='utf-8', level=log.DEBUG)
+	
 
 
 	def select_output_dir(self) -> None:
@@ -76,6 +83,34 @@ class HEKApplication(Tk):
 		for i in self.inputFiles:
 			all += i + "\n"
 		self.selectedFilesLabel.config(text=all)
+	
+	def encrypt_files(self):
+		pBar = Progressbar(self, orient=tk.HORIZONTAL, length=100)
+		pBar.pack(expand=True)
+		for f in self.inputFiles:
+			# Update the window without getting user input
+			self.update_idletasks()
+			# Perform shit
+			outFName = self.outputDir + "/" + str(basename(f)).replace('.', '_') + ".hef"
+			self.driver.encrypt_file(f, outFName)
+			# Update bar value
+			pBar['value'] += int(100/len(self.inputFiles))
+			sleep(3)
+		pBar.destroy()
+
+	def decrypt_files(self):
+		pBar = Progressbar(self, orient=tk.HORIZONTAL, length=100)
+		pBar.pack(expand=True)
+		for f in self.inputFiles:
+			# Update the window without getting user input
+			self.update_idletasks()
+			# Perform shit
+			outFName = str(basename(f)).replace(".hef", '').replace('_', '.')
+			print(outFName)
+			# Update bar value
+			pBar['value'] += int(100/len(self.inputFiles))
+			sleep(2)
+		pBar.destroy()
 
 
 class HEKDriver:
@@ -84,7 +119,7 @@ class HEKDriver:
 
 	def connect_to_key(self, port="/dev/ttyUSB0", baud=115200) -> bool:
 		try:
-			self.com = serial.Serial("/dev/ttyUSB0", 115200, stopbits=serial.STOPBITS_TWO,timeout=3)
+			self.com = serial.Serial(port, baud, stopbits=serial.STOPBITS_TWO,timeout=3)
 			if not self.com.isOpen():
 				self.com.open()
 		except SerialException:
@@ -110,39 +145,38 @@ class HEKDriver:
 			NotImplemented
 		return True
 	
-	def get_files(self, path):
-		NotImplemented
-	
-	def encrypt_file(self, fin, fout="output_files/encrypted_file.hef"):
+	def encrypt_file(self, fin : str, fout : str = None):
 		ptf = open(fin, "rb")
 		ecf = open(fout, "wb")
 		buf = []
 		sz = 0
-		while True:
+		eof = False
+		while not eof:
 			ret = ptf.read(16)
 			if ret:
-				sz += len(ret)
+				sz += 16
 				if(len(ret) < 16):
-					sz += 16
 					tmp = 15-len(ret)
 					ret += bytes(tmp) + bytes([tmp+1])
+					eof = True
 				buf.append(ret)
 			else:
 				break
 		self.com.write(b'e')
-		print("Sent encryption cmd")
+		log.debug("Sent encryption command")
 		self.com.timeout = 8
 		self.com.read_until(b's')
-		print("Received size cmd")
+		log.debug("Received size cmd")
+		print(sz, [len(i) for i in buf], buf)
 		self.com.write(bytes([sz & 0xFF]))
 		for i in range(1,8):
 			self.com.write(bytes([sz & (i*8<<0xFF)]))
 		ecf.write(self.com.read(32))
 		ecf.write(self.com.read(16))
-		print("Received key and initialization vector")
+		log.debug("Received key and initialization vector")
 		self.com.timeout = 4
 		for i,b in enumerate(buf):
-			print("Encrypting block {}/{}".format(i,int(sz/16)))
+			log.debug("Encrypting block {}/{}".format(i+1,int(sz/16)))
 			self.com.write(b)
 			ret = self.com.read(16)
 			ecf.write(ret)
@@ -169,6 +203,7 @@ class HEKDriver:
 		self.com.timeout = 8
 		self.com.read_until(b's')
 		print("Received size cmd")
+		print(sz)
 		self.com.write(bytes([sz & 0xFF]))
 		for i in range(1,8):
 			self.com.write(bytes([sz & (i*8<<0xFF)]))
@@ -222,7 +257,7 @@ class HEKDriver:
 		ecf.close()
 
 def main():
-	a = HEKApplication()
+	a = HEKApplication("/dev/ttyUSB1")
 	a.mainloop()
 	
 if __name__ == "__main__":
