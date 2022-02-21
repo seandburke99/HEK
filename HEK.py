@@ -26,7 +26,9 @@ def init_logging():
 	logFile = "log/{}.log".format(time())
 	if not isdir(expanduser("~/.HEK/logs")):
 		makedirs(expanduser("~/.HEK/logs"))
-	log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
+	# log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
+	log.basicConfig(encoding='utf-8', level=log.INFO)
+
 
 init_logging()
 
@@ -160,15 +162,30 @@ class HEKDriver:
 		return True
 	
 	def new_user_key(self, pw : str) -> bool:
-		return self.unlock_key(pw)
+		self.com.write(self.NEWUSER)
+		self.com.timeout = 4
+		if self.com.read(1) != self.HASH:
+			return False
+		hash = sha256(pw.encode('utf-8'), usedforsecurity=True).digest()
+		print("Passing hash of {}".format([int(i) for i in hash]))
+		for b in hash:
+			self.com.write(b)
+			print("Arduino wrote:", self.com.read_until(bytes([b])))
+		# self.com.write(hash)
+		if self.com.read(1) == self.FAIL:
+			return False
+		return True
 
 	def unlock_key(self, pw : str) -> bool:
 		self.com.write(self.UNLOCK)
 		self.com.timeout = 4
 		if self.com.read(1) != self.HASH:
+			log.warning("Failed to receive hash command when unlocking key")
 			return False
+		hash = sha256(pw.encode('utf-8'), usedforsecurity=True).digest()
 		self.com.write(sha256(pw.encode('utf-8'), usedforsecurity=True).digest())
 		if self.com.read(1) == self.FAIL:
+			log.warning("Key unlock failed by {} bytes, try different password".format(int.from_bytes(self.com.read(1), "little")))
 			return False
 		return True
 
@@ -201,7 +218,7 @@ class HEKDriver:
 			self.com.timeout = 4
 			ret = self.com.read(1)
 			if ret == self.FAIL:
-				log.warn("Received failure when trying to encrypt. Check lock status")
+				log.warning("Received failure when trying to encrypt. Check lock status")
 				return False
 			elif ret != self.SIZE:
 				log.error("Received invalid size confirmation")
@@ -244,7 +261,7 @@ class HEKDriver:
 			self.com.timeout = 4
 			ret = self.com.read(1)
 			if ret == self.FAIL:
-				log.warn("Received failure when trying to decrypt. Check lock status")
+				log.warning("Received failure when trying to decrypt. Check lock status")
 				return False
 			elif ret != self.SIZE:
 				log.error("Received invalid size confirmation")
@@ -279,10 +296,14 @@ def main():
 	d = HEKDriver()
 	print("Connected:", d.connect_to_key())
 	print("Handshake:", d.handshake_key())
-	if d.new_user_key("TestPass"):
-		print("Successful user key creation")
-	else:
-		print("Unable to make key")
+	print("New Key:", d.new_user_key("AnotherT"))
+	# hash = sha256("AnotherT".encode('utf-8'), usedforsecurity=True).digest()
+	# d.com.write(d.UNLOCK)
+	# if d.com.read(1)==d.HASH:
+	# 	ret = d.com.read(32)
+	# 	print("Hash: {}\nRead: {}".format([int(i) for i in hash], [int(i) for i in ret]))
 	
 if __name__ == "__main__":
 	main()
+
+# [27, 23, 17, 13, 7, 252, 8, 12, 13, 12, 10, 6, 3, 251, 0, 0, 246, 8, 8, 236, 15, 185, 1, 0, 1, 246, 8, 8, 245, 0, 251, 8]

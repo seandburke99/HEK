@@ -9,7 +9,7 @@ uint8_t init_eeprom(void){
     return 0;
 }
 
-uint8_t write_byte(const uint16_t addr, const uint8_t *c){
+uint8_t write_byte(const uint16_t addr, const uint8_t c){
     while(EECR & (1<<EEPE));
     while(SPMCSR & (1<<SELFPRGEN));
     if(addr < 1024){
@@ -17,7 +17,7 @@ uint8_t write_byte(const uint16_t addr, const uint8_t *c){
     }else{
         return 1;
     }
-    EEDR = *c;
+    EEDR = c;
     EECR |= (1<<EEMPE);
     EECR |= (1<<EEPE);
     return 0;
@@ -38,7 +38,7 @@ uint8_t read_byte(const uint16_t addr, uint8_t *c){
 
 uint8_t store_hash(const uint8_t hashSize, const uint8_t hash[hashSize]){
     for(int i=0;i<hashSize;i++){
-        if(write_byte(KEYLOC + i, &hash[i])){
+        if(write_byte(HASHLOC + i, &hash[i])){
             return 1;
         }
     }
@@ -46,14 +46,25 @@ uint8_t store_hash(const uint8_t hashSize, const uint8_t hash[hashSize]){
 }
 
 uint8_t compare_hash(const uint8_t hashSize, const uint8_t hash[hashSize]){
-    uint8_t b, stat = 0;
+    uint8_t b=0, stat = 0;
     for(int i=0;i<hashSize;i++){
-        read_byte(HASHLOC + i, &b);
+        if(read_byte(HASHLOC + i, &b)){
+            return 1;
+        }
         if(b != hash[i]){
             stat++;
         }
     }
     return stat;
+}
+
+uint8_t get_hash(const uint8_t hashSize, uint8_t hash[hashSize]){
+    for(int i=0;i<hashSize;i++){
+        if(read_byte(HASHLOC + i, &hash[i])){
+            return 1;
+        }
+    }
+    return 0;
 }
 
 uint8_t store_key(const uint8_t keySize, const uint8_t key[keySize], const uint8_t ivSize, const uint8_t iv[ivSize]){
