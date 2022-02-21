@@ -1,17 +1,18 @@
-from matplotlib.pyplot import title
+from hashlib import sha256
 import serial
 from serial.serialutil import SerialException
 
 import logging as log
-import os
-from os import mkdir, getcwd
-from os.path import isdir, basename
+from os import makedirs, getcwd
+from os.path import isdir, basename, expanduser
 
 from time import time, sleep
 
 import tkinter as tk
 from tkinter import Tk, filedialog
 from tkinter.ttk import Progressbar
+
+import bcrypt
 
 def compute_crc(data):
 	crc = 0;
@@ -21,9 +22,10 @@ def compute_crc(data):
 	return crc
 
 def init_logging():
-	logFile = "~/.HEK/logs/{}.log".format(time())
-	if not isdir("~/.HEK/logs"):
-		mkdir("~/.HEK/logs")
+	# logFile = "~/.HEK/logs/{}.log".format(time())
+	logFile = "log/{}.log".format(time())
+	if not isdir(expanduser("~/.HEK/logs")):
+		makedirs(expanduser("~/.HEK/logs"))
 	log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
 
 init_logging()
@@ -119,6 +121,16 @@ class HEKApplication(Tk):
 
 
 class HEKDriver:
+	UNLOCK = b'u'
+	LOCK = b'l'
+	NEWUSER = b'n'
+	KEY = b'k'
+	HASH = b'h'
+	ENCRYPTFILE = b'e'
+	DECRYPTFILE = b'd'
+	SIZE = b's'
+	GOOD = b'g'
+	FAIL = b'f'
 	def __init__(self):
 		return
 
@@ -147,7 +159,26 @@ class HEKDriver:
 			NotImplemented
 		return True
 	
-	def encrypt_file(self, fin : str, fout : str):
+	def new_user_key(self, pw : str) -> bool:
+		return self.unlock_key(pw)
+
+	def unlock_key(self, pw : str) -> bool:
+		self.com.write(self.UNLOCK)
+		self.com.timeout = 4
+		if self.com.read(1) != self.HASH:
+			return False
+		self.com.write(sha256(pw.encode('utf-8'), usedforsecurity=True).digest())
+		if self.com.read(1) == self.FAIL:
+			return False
+		return True
+
+	def lock_key(self) -> bool:
+		self.com.write(self.LOCK)
+		if self.com.read(1) == self.LOCK:
+			return True
+		return False
+	
+	def encrypt_file(self, fin : str, fout : str) -> bool:
 		# ptf = open(fin, "rb")
 		# ecf = open(fout, "wb")
 		with open(fin, "rb") as ptf, open(fout, "wb") as ecf:
@@ -165,10 +196,16 @@ class HEKDriver:
 					buf.append(ret)
 				else:
 					break
-			self.com.write(b'e')
+			self.com.write(self.ENCRYPTFILE)
 			log.debug("Sent encryption command")
-			self.com.timeout = 8
-			self.com.read_until(b's')
+			self.com.timeout = 4
+			ret = self.com.read(1)
+			if ret == self.FAIL:
+				log.warn("Received failure when trying to encrypt. Check lock status")
+				return False
+			elif ret != self.SIZE:
+				log.error("Received invalid size confirmation")
+				return False
 			log.debug("Received size cmd")
 			ssz = sz
 			for i in range(8):
@@ -202,21 +239,27 @@ class HEKDriver:
 					buf.append(ret)
 				else:
 					break
-			self.com.write(b'd')
+			self.com.write(self.DECRYPTFILE)
 			log.debug("Sent decryption cmd")
-			self.com.timeout = 8
-			self.com.read_until(b's')
+			self.com.timeout = 4
+			ret = self.com.read(1)
+			if ret == self.FAIL:
+				log.warn("Received failure when trying to decrypt. Check lock status")
+				return False
+			elif ret != self.SIZE:
+				log.error("Received invalid size confirmation")
+				return False
 			log.debug("Received size cmd")
 			ssz = sz
 			for i in range(8):
 				self.com.write(bytes([ssz & 0xFF]))
 				ssz = ssz>>8
-			self.com.read_until(b'k')
+			self.com.read_until(self.KEY)
 			self.com.write(key)
 			self.com.write(iv)
 			log.debug("Sent key and initialization vector")
 			self.com.timeout = 4
-			self.com.read_until(b'g')
+			self.com.read_until(self.GOOD)
 			for i,b in enumerate(buf):
 				log.debug("Decrypting block {}/{}".format(i+1,int(sz/16)))
 				self.com.write(b)
@@ -233,8 +276,13 @@ class HEKDriver:
 					ptf.write(ret)
 
 def main():
-	a = HEKApplication("/dev/ttyUSB0")
-	a.mainloop()
+	d = HEKDriver()
+	print("Connected:", d.connect_to_key())
+	print("Handshake:", d.handshake_key())
+	if d.new_user_key("TestPass"):
+		print("Successful user key creation")
+	else:
+		print("Unable to make key")
 	
 if __name__ == "__main__":
 	main()

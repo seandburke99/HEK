@@ -4,6 +4,11 @@
 #include <uart.h>
 #define ECB 0
 #define CTR 0
+#define KEYLEN 32
+#define BLOCKLEN 16
+#define HASHLEN 32
+
+extern uint8_t unlocked;
 
 /**
  * @brief Enumeration for the different commands performable
@@ -12,10 +17,20 @@
 typedef enum HEKCMD{
     ENCRYPT = 'e',
     DECRYPT = 'd',
-    NEWRSAKEY = 'n',
-    USERSAKEY = 'k'
+    NEWUSERKEY = 'n',
+    UNLOCKED = 'u',
+    LOCKED = 'l',
+    FAIL = 'f',
+    SIZE = 's',
+    KEY = 'k',
+    HASH = 'h',
+    GOOD = 'g'
 }HEKCMD;
 
+/**
+ * @brief Union to convert 8 byte size into 64 bit unsigned integer
+ * 
+ */
 union BUF2SIZE{
     uint64_t size;
     uint8_t buffer[2];
@@ -27,30 +42,11 @@ union BUF2SIZE{
  */
 void HEK_init(void);
 
-/**
- * @brief Function to parse a command sent in
- * 
- * @param msg Block of characters to parse the command from
- * @return uint8_t Boolean indication of function success
- */
-uint8_t parse_cmd(char msg[]);
+uint8_t new_user_key(void);
 
-/**
- * @brief Generate an RSA key
- * 
- * @param k Location to store the generated key
- * @return uint8_t Boolean indication of function success
- */
-uint8_t generate_rsa_key(uint8_t *k);
+uint8_t lock_key(void);
 
-/**
- * @brief Get the rsa key object from memory
- * 
- * @param k Location to store the retrieved key
- * @param idx Index of the key to retrieve
- * @return uint8_t Boolean indication of function success
- */
-uint8_t get_rsa_key(uint8_t *k, uint8_t idx);
+uint8_t unlock_key(void);
 
 /**
  * @brief Generate an aes context for the aes library
@@ -59,17 +55,7 @@ uint8_t get_rsa_key(uint8_t *k, uint8_t idx);
  * @param iv Pointer to the initialization vector location
  * @return uint8_t Boolean indication of function success
  */
-uint8_t generate_aes_ctx(uint8_t *k, uint8_t *iv);
-
-/**
- * @brief Encrypt a files asymmetric data
- * 
- * @param rsakID ID of the rsa key to use
- * @param k AES key
- * @param iv AES initialization vector
- * @return uint8_t Boolean indication of function success
- */
-uint8_t encrypt_key_iv(uint8_t rsakID, uint8_t *k, uint8_t *iv);
+uint8_t generate_aes_ctx(uint8_t k[KEYLEN], uint8_t iv[BLOCKLEN]);
 
 /**
  * @brief Function that follows the file encryption process

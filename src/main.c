@@ -10,25 +10,32 @@ int main(void){
 	HEK_init();
 	uart_handshake();
 
-	DDRD |= 0b11000000;
-
 	while(1){
 		if(recv_char(&c)){
 			c = 0;
 			continue;
 		}
 		switch(c){
-			case NEWRSAKEY:
-				1==1;
+			case NEWUSERKEY:
+				new_user_key();
 				break;
-			case USERSAKEY:
-				1==1;
+			case UNLOCKED:
+				unlock_key();
+				break;
+			case LOCKED:
+				lock_key();
 				break;
 			case ENCRYPT:
-				encrypt_file();
+				if(unlocked)
+					encrypt_file();
+				else
+					send_char(FAIL);
 				break;
 			case DECRYPT:
-				decrypt_file();
+				if(unlocked)
+					decrypt_file();
+				else
+					send_char(FAIL);
 				break;
 		}
 	}
