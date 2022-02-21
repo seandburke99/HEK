@@ -139,115 +139,89 @@ class HEKDriver:
 		return True
 	
 	def encrypt_file(self, fin : str, fout : str):
-		ptf = open(fin, "rb")
-		ecf = open(fout, "wb")
-		buf = []
-		sz = 0
-		eof = False
-		while not eof:
-			ret = ptf.read(16)
-			if ret:
-				sz += 16
-				if(len(ret) < 16):
-					tmp = 15-len(ret)
-					ret += bytes(tmp) + bytes([tmp+1])
-					eof = True
-				buf.append(ret)
-			else:
-				break
-		self.com.write(b'e')
-		log.debug("Sent encryption command")
-		self.com.timeout = 8
-		self.com.read_until(b's')
-		log.debug("Received size cmd")
-		ssz = sz
-		for i in range(8):
-			self.com.write(bytes([ssz & 0xFF]))
-			ssz = ssz>>8
-		log.debug("Sent size of {} bytes".format(sz))
-		ecf.write(self.com.read(32))
-		ecf.write(self.com.read(16))
-		log.debug("Received key and initialization vector")
-		self.com.timeout = 4
-		for i,b in enumerate(buf):
-			log.debug("Encrypting block {}/{}".format(i+1,int(sz/16)))
-			self.com.write(b)
-			ret = self.com.read(16)
-			ecf.write(ret)
+		# ptf = open(fin, "rb")
+		# ecf = open(fout, "wb")
+		with open(fin, "rb") as ptf, open(fout, "wb") as ecf:
+			buf = []
+			sz = 0
+			eof = False
+			while not eof:
+				ret = ptf.read(16)
+				if ret:
+					sz += 16
+					if(len(ret) < 16):
+						tmp = 15-len(ret)
+						ret += bytes(tmp) + bytes([tmp+1])
+						eof = True
+					buf.append(ret)
+				else:
+					break
+			self.com.write(b'e')
+			log.debug("Sent encryption command")
+			self.com.timeout = 8
+			self.com.read_until(b's')
+			log.debug("Received size cmd")
+			ssz = sz
+			for i in range(8):
+				self.com.write(bytes([ssz & 0xFF]))
+				ssz = ssz>>8
+			log.debug("Sent size of {} bytes".format(sz))
+			ecf.write(self.com.read(32))
+			ecf.write(self.com.read(16))
+			log.debug("Received key and initialization vector")
+			self.com.timeout = 4
+			for i,b in enumerate(buf):
+				log.debug("Encrypting block {}/{}".format(i+1,int(sz/16)))
+				self.com.write(b)
+				ret = self.com.read(16)
+				ecf.write(ret)
 		ptf.close()
 		ecf.close()
 
 	def decrypt_file(self, fin : str, fout : str):
-		ecf = open(fin, "rb")
-		ptf = open(fout, "wb")
-		key = ecf.read(32)
-		iv = ecf.read(16)
-		buf = []
-		sz = 0
-		while True:
-			ret = ecf.read(16)
-			if ret:
-				sz += len(ret)
-				buf.append(ret)
-			else:
-				break
-		self.com.write(b'd')
-		log.debug("Sent decryption cmd")
-		self.com.timeout = 8
-		self.com.read_until(b's')
-		log.debug("Received size cmd")
-		ssz = sz
-		for i in range(8):
-			self.com.write(bytes([ssz & 0xFF]))
-			ssz = ssz>>8
-		self.com.read_until(b'k')
-		self.com.write(key)
-		self.com.write(iv)
-		log.debug("Sent key and initialization vector")
-		self.com.timeout = 4
-		self.com.read_until(b'g')
-		for i,b in enumerate(buf):
-			log.debug("Decrypting block {}/{}".format(i+1,int(sz/16)))
-			self.com.write(b)
-			ret = self.com.read(16)
-			if i==len(buf)-1:
-				for by in ret:
-					if by:
-						ptf.write(bytes([by]))
-					else:
-						break
-			else:
-				if(i==len(buf)-1):
-					print(ret[15])
-				ptf.write(ret)
-		ptf.close()
-		ecf.close()
-	
-	def local_encrypt(self, f):
-		ecf = open("output_files/encrypted_file.hef", "rb")
-		key = ecf.read(32)
-		iv = ecf.read(16)
-		ecf.close()
-		ecf = open("tst.hef", "wb")
-		with open(f, "rb") as ptf:
-			
-			cipher = AES.new(key, AES.MODE_CBC, iv)
+		# ecf = open(fin, "rb")
+		# ptf = open(fout, "wb")
+		with open(fin, "rb") as ecf, open(fout, "wb") as ptf:
+			key = ecf.read(32)
+			iv = ecf.read(16)
 			buf = []
 			sz = 0
 			while True:
-				ret = ptf.read(16)
+				ret = ecf.read(16)
 				if ret:
 					sz += len(ret)
-					if(len(ret) < 16):
-						sz += 16-len(ret)
-						ret += bytes(16-len(ret))
 					buf.append(ret)
 				else:
 					break
-			print(buf)
-			for b in buf:
-				ecf.write(cipher.encrypt(b))
-		ecf.close()
+			self.com.write(b'd')
+			log.debug("Sent decryption cmd")
+			self.com.timeout = 8
+			self.com.read_until(b's')
+			log.debug("Received size cmd")
+			ssz = sz
+			for i in range(8):
+				self.com.write(bytes([ssz & 0xFF]))
+				ssz = ssz>>8
+			self.com.read_until(b'k')
+			self.com.write(key)
+			self.com.write(iv)
+			log.debug("Sent key and initialization vector")
+			self.com.timeout = 4
+			self.com.read_until(b'g')
+			for i,b in enumerate(buf):
+				log.debug("Decrypting block {}/{}".format(i+1,int(sz/16)))
+				self.com.write(b)
+				ret = self.com.read(16)
+				if i==len(buf)-1:
+					for by in ret:
+						if by:
+							ptf.write(bytes([by]))
+						else:
+							break
+				else:
+					if(i==len(buf)-1):
+						print(ret[15])
+					ptf.write(ret)
 
 def main():
 	a = HEKApplication("/dev/ttyUSB0")
