@@ -21,38 +21,48 @@ def compute_crc(data):
 	return crc
 
 def init_logging():
-	logFile = "log/{}.log".format(time())
-	if not isdir("log"):
-		mkdir("log")
-	# log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
-	log.basicConfig(encoding='utf-8', level=log.INFO)
+	logFile = "~/.HEK/logs/{}.log".format(time())
+	if not isdir("~/.HEK/logs"):
+		mkdir("~/.HEK/logs")
+	log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
 
 init_logging()
 
 class HEKApplication(Tk):
 	def __init__(self, keyName="/dev/ttyUSB0"):
-		
+		"""Hardware encryption key application
+
+		Args:
+			keyName (str, optional): _description_. Defaults to "/dev/ttyUSB0".
+		"""
 		# Tk setup
 		super(HEKApplication, self).__init__()
 		self.title("Hardware Encryption Key")
-		self.geometry("500x500")
+
+		self.userPassword = tk.StringVar(self)
+		self.loginForm = tk.Entry(self, textvariable=self.userPassword)
+		# self.loginButton = tk.Button(self, text="Login", command=set_rsa_key)
 
 		# Driver creation
 		self.driver = HEKDriver()
 
+		# Button and label creation and init for selecting files
 		self.selectFilesButton = tk.Button(self, text="Select Files", command=self.select_files)
 		self.selectedFilesLabel = tk.Label(self)
 
+		# Button and label creation for output directory
 		self.selOutputDirButton = tk.Button(self, text = "Select Output File Directory", command=self.select_output_dir)
 		self.outputDirLabel = tk.Label(self)
 
+		# Button and label creation for encrypt and decrypt actions
 		self.encryptButton = tk.Button(self, text="Encrypt selected files", command=self.encrypt_files)
 		self.decryptButton = tk.Button(self, text="Decrypt selected files", command=self.decrypt_files)
 
+		# Init vars for later
 		self.inputFiles = list
-		
 		self.outputDir = getcwd()
 
+		# Add all widgets to window
 		self.selectFilesButton.pack()
 		self.selectedFilesLabel.pack()
 		self.selOutputDirButton.pack()
@@ -65,7 +75,6 @@ class HEKApplication(Tk):
 			log.error("Unable to connect to hardware key")
 		if not self.driver.handshake_key():
 			log.error("Unable to complete handshake with hardware key")
-	
 		return
 	
 	def select_output_dir(self) -> None:
