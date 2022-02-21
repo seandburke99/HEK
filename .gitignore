@@ -5,3 +5,4 @@ bin
 input_files
 output_files
 log
+__pycache__

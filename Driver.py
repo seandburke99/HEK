@@ -24,9 +24,8 @@ def init_logging():
 	logFile = "log/{}.log".format(time())
 	if not isdir("log"):
 		mkdir("log")
-	# log.basicConfig(filename=logFile, encoding='utf-8', level=log.DEBUG)
-	log.basicConfig(encoding='utf-8', level=log.DEBUG)
-
+	# log.basicConfig(filename=logFile, encoding='utf-8', level=log.INFO)
+	log.basicConfig(encoding='utf-8', level=log.INFO)
 
 init_logging()
 
@@ -102,7 +101,7 @@ class HEKApplication(Tk):
 			# Update the window without getting user input
 			self.update_idletasks()
 			# Perform decryption
-			outFName = str(basename(f)).replace(".hef", '').replace('_', '.')
+			outFName = self.outputDir + "/" + str(basename(f)).replace(".hef", '').replace('_', '.')
 			self.driver.decrypt_file(f, outFName)
 			# Update bar value
 			pBar['value'] += int(100/len(self.inputFiles))
@@ -120,7 +119,6 @@ class HEKDriver:
 			if not self.com.isOpen():
 				self.com.open()
 		except SerialException:
-			print("Unable to open connection to key")
 			return False
 		finally:
 			NotImplemented
@@ -133,10 +131,8 @@ class HEKDriver:
 				ret = self.com.read_until()
 				if ret==b'2':
 					self.com.write(b'2')
-					print("Handshake confirmed")
 					break
 		except:
-			print("Unable to complete handshake with microcontroller")
 			return False
 		finally:
 			NotImplemented
@@ -164,9 +160,10 @@ class HEKDriver:
 		self.com.timeout = 8
 		self.com.read_until(b's')
 		log.debug("Received size cmd")
-		self.com.write(bytes([sz & 0xFF]))
-		for i in range(1,8):
-			self.com.write(bytes([sz & (i*8<<0xFF)]))
+		ssz = sz
+		for i in range(8):
+			self.com.write(bytes([ssz & 0xFF]))
+			ssz = ssz>>8
 		log.debug("Sent size of {} bytes".format(sz))
 		ecf.write(self.com.read(32))
 		ecf.write(self.com.read(16))
@@ -185,7 +182,6 @@ class HEKDriver:
 		ptf = open(fout, "wb")
 		key = ecf.read(32)
 		iv = ecf.read(16)
-		print("Read key and iv\n{}\n{}".format(key, iv))
 		buf = []
 		sz = 0
 		while True:
@@ -196,22 +192,22 @@ class HEKDriver:
 			else:
 				break
 		self.com.write(b'd')
-		print("Sent decryption cmd")
+		log.debug("Sent decryption cmd")
 		self.com.timeout = 8
 		self.com.read_until(b's')
-		print("Received size cmd")
-		print(sz)
-		self.com.write(bytes([sz & 0xFF]))
-		for i in range(1,8):
-			self.com.write(bytes([sz & (i*8<<0xFF)]))
+		log.debug("Received size cmd")
+		ssz = sz
+		for i in range(8):
+			self.com.write(bytes([ssz & 0xFF]))
+			ssz = ssz>>8
 		self.com.read_until(b'k')
 		self.com.write(key)
 		self.com.write(iv)
-		print("Sent key and initialization vector")
+		log.debug("Sent key and initialization vector")
 		self.com.timeout = 4
 		self.com.read_until(b'g')
 		for i,b in enumerate(buf):
-			print("Decrypting block {}/{}".format(i+1,int(sz/16)))
+			log.debug("Decrypting block {}/{}".format(i+1,int(sz/16)))
 			self.com.write(b)
 			ret = self.com.read(16)
 			if i==len(buf)-1:

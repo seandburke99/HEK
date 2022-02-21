@@ -67,10 +67,7 @@ uint8_t encrypt_file(void){
     send_char('s');
     union BUF2SIZE cnv;
     for(int i=0;i<8;i++){
-        recv_char(&cnv.buffer[7-i]);
-    }
-    if(cnv.size == 520736){
-        PORTD |= (1<<PIND6);
+        recv_char(&cnv.buffer[i]);
     }
     uint8_t key[AES_KEYLEN], blk[AES_BLOCKLEN];
     generate_aes_ctx(key, blk);
@@ -93,7 +90,7 @@ uint8_t decrypt_file(void){
     send_char('s');
     union BUF2SIZE cnv;
     for(int i=0;i<8;i++){
-        recv_char(&cnv.buffer[7-i]);
+        recv_char(&cnv.buffer[i]);
     }
     uint8_t key[AES_KEYLEN], blk[AES_BLOCKLEN];
     send_char('k');
