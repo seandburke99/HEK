@@ -4,9 +4,9 @@
 #include <uart.h>
 #define ECB 0
 #define CTR 0
-#define KEYLEN 32
-#define BLOCKLEN 16
-#define HASHLEN 32
+#define KEYLEN (uint8_t)32
+#define BLOCKLEN (uint8_t)16
+#define HASHLEN (uint8_t)32
 
 extern uint8_t unlocked;
 

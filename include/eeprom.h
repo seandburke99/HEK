@@ -1,9 +1,9 @@
 #ifndef EEPROM_H
 #define EEPROM_H
 #include <stdint.h>
-#define HASHLOC 0 //Location of the user hash in memory
-#define KEYLOC 32 //Location of the user key in memory
-#define IVLOC 64 //Location of the user init vector in memory
+#define HASHLOC (uint16_t)0 //Location of the user hash in memory
+#define KEYLOC (uint16_t)32 //Location of the user key in memory
+#define IVLOC (uint16_t)64 //Location of the user init vector in memory
 
 uint8_t init_eeprom(void);
 

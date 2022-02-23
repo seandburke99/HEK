@@ -167,12 +167,9 @@ class HEKDriver:
 		if self.com.read(1) != self.HASH:
 			return False
 		hash = sha256(pw.encode('utf-8'), usedforsecurity=True).digest()
-		print("Passing hash of {}".format([int(i) for i in hash]))
-		for b in hash:
-			self.com.write(b)
-			print("Arduino wrote:", self.com.read_until(bytes([b])))
-		# self.com.write(hash)
-		if self.com.read(1) == self.FAIL:
+		self.com.write(hash)
+		ret = self.com.read(1)
+		if ret != self.UNLOCK:
 			return False
 		return True
 
@@ -299,9 +296,17 @@ def main():
 	print("New Key:", d.new_user_key("AnotherT"))
 	# hash = sha256("AnotherT".encode('utf-8'), usedforsecurity=True).digest()
 	# d.com.write(d.UNLOCK)
-	# if d.com.read(1)==d.HASH:
-	# 	ret = d.com.read(32)
-	# 	print("Hash: {}\nRead: {}".format([int(i) for i in hash], [int(i) for i in ret]))
+	# if d.com.read(1)!=d.HASH:
+	# 	return
+	# d.com.write(hash)
+	# ret = d.com.read(1)
+	# if ret == b'd':
+	# 	print("Failed to read")
+	# 	return
+	# if ret == d.FAIL:
+	# 	print("Hash did not align")
+	# ret = d.com.read(32)
+	# print("Hash: {}\nRead: {}".format([int(i) for i in hash], [int(i) for i in ret]))
 	
 if __name__ == "__main__":
 	main()

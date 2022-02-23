@@ -21,11 +21,11 @@ void HEK_init(void){
 uint8_t new_user_key(void){
 	uint8_t hash[HASHLEN], k[KEYLEN], iv[BLOCKLEN];
 	send_char(HASH);
-	uint8_t b;
-	for(int i=0;i<HASHLEN;i++){
-		recv_char(&b);
-		send_char(b);
-		write_byte(HASHLOC + i, b);
+	recv_block(&hash[0]);
+	recv_block(&hash[16]);
+	if(store_hash(HASHLEN, hash)){
+		send_char(FAIL);
+		return 1;
 	}
 	if(generate_aes_ctx(k, iv)){
 		send_char(FAIL);
@@ -47,20 +47,26 @@ uint8_t lock_key(void){
 }
 
 uint8_t unlock_key(void){
-	uint8_t hash[HASHLEN];
+	uint8_t hash[HASHLEN] = {0};
 	send_char(HASH);
-	// recv_block(hash);
-	// recv_block(&hash[16]);
+	recv_block(&hash[0]);
+	recv_block(&hash[16]);
+	uint8_t ret = compare_hash(HASHLEN, hash);
+	if(ret==255){
+		send_char('d');
+		return 1;
+	}else if(ret){
+		send_char(FAIL);
+	}else{
+		send_char(UNLOCKED);
+		unlocked = 1;
+	}
+	for(int i=0;i<HASHLEN;i++){
+		hash[i] = 0;
+	}
+	get_hash(HASHLEN, hash);
 	send_block(&hash[0]);
 	send_block(&hash[16]);
-	uint8_t difbytes = compare_hash(HASHLEN, hash);
-	if(difbytes){
-		send_char(FAIL);
-		send_char(difbytes);
-		return 1;
-	}
-	unlocked = 1;
-	send_char(UNLOCKED);
 	return 0;
 }
 
