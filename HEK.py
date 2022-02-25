@@ -12,8 +12,6 @@ import tkinter as tk
 from tkinter import Tk, filedialog
 from tkinter.ttk import Progressbar
 
-import bcrypt
-
 def compute_crc(data):
 	crc = 0;
 	for b in data:
@@ -45,7 +43,9 @@ class HEKApplication(Tk):
 
 		self.userPassword = tk.StringVar(self)
 		self.loginForm = tk.Entry(self, textvariable=self.userPassword)
-		# self.loginButton = tk.Button(self, text="Login", command=set_rsa_key)
+		self.loginButton = tk.Button(self, text="Login", command=self.login)
+		self.loginForm.pack()
+		self.loginButton.pack()
 
 		# Driver creation
 		self.driver = HEKDriver()
@@ -67,12 +67,12 @@ class HEKApplication(Tk):
 		self.outputDir = getcwd()
 
 		# Add all widgets to window
-		self.selectFilesButton.pack()
-		self.selectedFilesLabel.pack()
-		self.selOutputDirButton.pack()
-		self.outputDirLabel.pack()
-		self.encryptButton.pack()
-		self.decryptButton.pack()
+		# self.selectFilesButton.pack()
+		# self.selectedFilesLabel.pack()
+		# self.selOutputDirButton.pack()
+		# self.outputDirLabel.pack()
+		# self.encryptButton.pack()
+		# self.decryptButton.pack()
 
 		# Driver setup
 		if not self.driver.connect_to_key(port = keyName):
@@ -87,11 +87,23 @@ class HEKApplication(Tk):
 
 	def select_files(self) -> None:
 		self.inputFiles = filedialog.askopenfilenames(initialdir=getcwd())
-		
 		all = "Selected Files:\n"
 		for i in self.inputFiles:
 			all += i + "\n"
 		self.selectedFilesLabel.config(text=all)
+
+	def login(self):
+		if self.driver.unlock_key(self.userPassword.get()):
+			self.loginForm.pack_forget()
+			self.loginButton.pack_forget()
+			self.selectFilesButton.pack()
+			self.selectedFilesLabel.pack()
+			self.selOutputDirButton.pack()
+			self.outputDirLabel.pack()
+			self.encryptButton.pack()
+			self.decryptButton.pack()
+		else:
+			print("Incorrect Password")
 	
 	def encrypt_files(self):
 		pBar = Progressbar(self, orient=tk.HORIZONTAL, length=100)
@@ -290,23 +302,8 @@ class HEKDriver:
 					ptf.write(ret)
 
 def main():
-	d = HEKDriver()
-	print("Connected:", d.connect_to_key())
-	print("Handshake:", d.handshake_key())
-	print("New Key:", d.new_user_key("AnotherT"))
-	# hash = sha256("AnotherT".encode('utf-8'), usedforsecurity=True).digest()
-	# d.com.write(d.UNLOCK)
-	# if d.com.read(1)!=d.HASH:
-	# 	return
-	# d.com.write(hash)
-	# ret = d.com.read(1)
-	# if ret == b'd':
-	# 	print("Failed to read")
-	# 	return
-	# if ret == d.FAIL:
-	# 	print("Hash did not align")
-	# ret = d.com.read(32)
-	# print("Hash: {}\nRead: {}".format([int(i) for i in hash], [int(i) for i in ret]))
+	app = HEKApplication()
+	app.mainloop()
 	
 if __name__ == "__main__":
 	main()

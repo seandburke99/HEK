@@ -4,9 +4,13 @@
 #include <uart.h>
 #define ECB 0
 #define CTR 0
-#define KEYLEN (uint8_t)32
-#define BLOCKLEN (uint8_t)16
+
 #define HASHLEN (uint8_t)32
+#define HASHLOC (uint16_t)0 //Location of the user hash in memory
+#define KEYLEN (uint8_t)32
+#define KEYLOC (uint16_t)32 //Location of the user key in memory
+#define BLOCKLEN (uint8_t)16
+#define IVLOC (uint16_t)64 //Location of the user init vector in memory
 
 extern uint8_t unlocked;
 
@@ -47,6 +51,8 @@ uint8_t new_user_key(void);
 uint8_t lock_key(void);
 
 uint8_t unlock_key(void);
+
+uint8_t get_user_key(uint8_t k[KEYLEN], uint8_t iv[BLOCKLEN]);
 
 /**
  * @brief Generate an aes context for the aes library

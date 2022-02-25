@@ -2,16 +2,15 @@
 #include <aes.h>
 #include <avr/io.h>
 #include <string.h>
-#include <eeprom.h>
 #ifndef BUILD
-#include <avr/iom328p.h>
+	#include <avr/iom328p.h>
 #endif
+#include <avr/eeprom.h>
 
 uint8_t unlocked = 0;
 
 void HEK_init(void){
 	init_uart(115200);
-	init_eeprom();
 
 	//enable interrupts
 	ADMUX |= (1<<REFS0);
@@ -23,18 +22,13 @@ uint8_t new_user_key(void){
 	send_char(HASH);
 	recv_block(&hash[0]);
 	recv_block(&hash[16]);
-	if(store_hash(HASHLEN, hash)){
-		send_char(FAIL);
-		return 1;
-	}
+	eeprom_write_block((void*)hash, (void*)HASHLOC, HASHLEN);
 	if(generate_aes_ctx(k, iv)){
 		send_char(FAIL);
 		return 1;
 	}
-	if(store_key(KEYLEN, k, BLOCKLEN, iv)){
-		send_char(FAIL);
-		return 1;
-	}
+	eeprom_write_block((void*)k, (void*)KEYLOC, KEYLEN);
+	eeprom_write_block((void*)iv, (void*)IVLOC, BLOCKLEN);
 	unlocked = 1;
 	send_char(UNLOCKED);
 	return 0;
@@ -47,34 +41,26 @@ uint8_t lock_key(void){
 }
 
 uint8_t unlock_key(void){
-	uint8_t hash[HASHLEN] = {0};
+	uint8_t recvHash[HASHLEN], usrHash[HASHLEN];
 	send_char(HASH);
-	recv_block(&hash[0]);
-	recv_block(&hash[16]);
-	uint8_t ret = compare_hash(HASHLEN, hash);
-	if(ret==255){
-		send_char('d');
-		return 1;
-	}else if(ret){
+	recv_block(&recvHash[0]);
+	recv_block(&recvHash[16]);
+	uint8_t diff = 0;
+	eeprom_read_block((void*)usrHash, (void*)HASHLOC, HASHLEN);
+	if(diff){
 		send_char(FAIL);
+		return 1;
 	}else{
 		send_char(UNLOCKED);
 		unlocked = 1;
 	}
-	for(int i=0;i<HASHLEN;i++){
-		hash[i] = 0;
-	}
-	get_hash(HASHLEN, hash);
-	send_block(&hash[0]);
-	send_block(&hash[16]);
 	return 0;
 }
 
-uint8_t get_user_key(uint8_t hash[HASHLEN], uint8_t k[KEYLEN], uint8_t iv[BLOCKLEN]){
-	if(compare_hash(HASHLEN, hash)){
-		return 1;
-	}
-	return retrieve_key(KEYLEN, k, BLOCKLEN, iv);
+uint8_t get_user_key(uint8_t k[KEYLEN], uint8_t iv[BLOCKLEN]){
+	eeprom_read_block((void*)k, (void*)KEYLOC, KEYLEN);
+	eeprom_read_block((void*)iv, (void*)IVLOC, BLOCKLEN);
+	return 0;
 }
 
 uint8_t generate_aes_ctx(uint8_t k[KEYLEN], uint8_t iv[BLOCKLEN]){
@@ -104,15 +90,19 @@ uint8_t encrypt_file(void){
 		recv_char(&cnv.buffer[i]);
 	}
 	uint8_t key[KEYLEN], blk[BLOCKLEN];
+	struct AES_ctx usrCtx, fileCtx;
+	get_user_key(key, blk);
+	AES_init_ctx_iv(&usrCtx, key, blk);
 	generate_aes_ctx(key, blk);
-	struct AES_ctx ectx;
-	AES_init_ctx_iv(&ectx, key, blk);
+	AES_init_ctx_iv(&fileCtx, key, blk);
+	AES_CBC_encrypt_buffer(&usrCtx, key, KEYLEN);
+	AES_CBC_encrypt_buffer(&usrCtx, blk, BLOCKLEN);
 	send_block(key);
 	send_block(&key[16]);
 	send_block(blk);
 	while(cnv.size>0){
 		if(!recv_block(blk)){
-			AES_CBC_encrypt_buffer(&ectx, blk, BLOCKLEN);
+			AES_CBC_encrypt_buffer(&fileCtx, blk, BLOCKLEN);
 			send_block(blk);
 			cnv.size -= 16;
 		}
@@ -126,17 +116,21 @@ uint8_t decrypt_file(void){
 	for(int i=0;i<8;i++){
 		recv_char(&cnv.buffer[i]);
 	}
+	struct AES_ctx usrCtx, fileCtx;
 	uint8_t key[KEYLEN], blk[BLOCKLEN];
+	get_user_key(key, blk);
+	AES_init_ctx_iv(&usrCtx, key, blk);
 	send_char(KEY);
 	recv_block(key);
 	recv_block(&key[16]);
 	recv_block(blk);
-	struct AES_ctx ectx;
-	AES_init_ctx_iv(&ectx, key, blk);
+	AES_CBC_decrypt_buffer(&usrCtx, key, KEYLEN);
+	AES_CBC_decrypt_buffer(&usrCtx, blk, BLOCKLEN);
+	AES_init_ctx_iv(&fileCtx, key, blk);
 	send_char(GOOD);
 	while(cnv.size>0){
 		if(!recv_block(blk)){
-			AES_CBC_decrypt_buffer(&ectx, blk, BLOCKLEN);
+			AES_CBC_decrypt_buffer(&fileCtx, blk, BLOCKLEN);
 			send_block(blk);
 			cnv.size -= 16;
 		}
