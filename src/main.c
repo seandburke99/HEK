@@ -10,20 +10,10 @@ int main(void){
 	HEK_init();
 	uart_handshake();
 
-	DDRD |= 0b11000000;
-
 	while(1){
-		PORTD |= (1<<PIND7);
-		if(unlocked){
-			PORTD |= (1<<PIND6);
-		}else{
-			PORTD &= ~(1<<PIND6);
-		}
 		if(recv_char(&c)){
 			c = 0;
 			continue;
-		}else{
-			PORTD &= ~(1<<PIND7);
 		}
 		switch(c){
 			case NEWUSERKEY:
