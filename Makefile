@@ -4,8 +4,8 @@
 
 # Compiler settings - Can be customized.
 CC = avr-gcc
-CXXFLAGS = -mmcu=atmega328p -D BUILD
-LDFLAGS = -Iinclude
+CXXFLAGS = -mmcu=atmega328p -D BUILD -Iinclude
+LDFLAGS = 
 DEV = /dev/ttyUSB0
 AVRCONF = -C/etc/avrdude.conf
 AVRLOAD = $(AVRCONF) -v -patmega328p -carduino -P$(DEV) -b57600 -D -Uflash:w:bin/$(APPNAME).hex:i
@@ -46,14 +46,14 @@ bin:
 
 # Creates the dependecy rules
 $(DEPDIR)/%.d: $(SRCDIR)/%$(EXT)
-	@$(CPP) $(CFLAGS) $< -MM -MT $(@:$(DEPDIR)/%.d=$(OBJDIR)/%.o) >$@ $(LDFLAGS)
+	@$(CPP) $(CFLAGS) $< -MM -MT $(@:$(DEPDIR)/%.d=$(OBJDIR)/%.o) >$@
 
 # Includes all .h files
 -include $(DEP)
 
 # Building rule for .o files and its .c/.cpp in combination with all .h
 $(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
-	$(CC) $(CXXFLAGS) -o $@ -c $< $(LDFLAGS)
+	$(CC) $(CXXFLAGS) -o $@ -c $<
 
 load: bin $(APPNAME)
 	avrdude $(AVRLOAD)
